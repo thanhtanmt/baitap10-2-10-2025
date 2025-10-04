@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>GraphQL CRUD Frontend</title>
+</head>
+<body>
+    <h1>Quản lý Product (Price thấp đến cao)</h1>
+    <button onclick="loadAllProductsByPrice()">Lấy Products theo Price</button>
+    <div id="productsByPrice"></div>
+
+    <h2>Products của Category (nhập ID)</h2>
+    <input id="catId" placeholder="Category ID" type="number">
+    <button onclick="loadProductsByCategory()">Lấy Products</button>
+    <div id="productsByCat"></div>
+
+    <h1>CRUD User</h1>
+    <h2>Tạo User</h2>
+    <input id="userFullname" placeholder="Fullname">
+    <input id="userEmail" placeholder="Email">
+    <input id="userPassword" placeholder="Password">
+    <input id="userPhone" placeholder="Phone">
+    <button onclick="createUser()">Tạo</button>
+
+    <h2>Danh sách Users</h2>
+    <button onclick="loadAllUsers()">Lấy tất cả Users</button>
+    <div id="users"></div>
+
+    <!-- Tương tự cho Category và Product CRUD: Thêm form update/delete với ID -->
+
+    <script>
+        const GRAPHQL_ENDPOINT = '/graphql';
+
+        function graphqlRequest(query, variables = {}) {
+            return fetch(GRAPHQL_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, variables })
+            }).then(res => res.json());
+        }
+
+        function loadAllProductsByPrice() {
+            const query = `
+                query {
+                    allProductsByPrice {
+                        id
+                        title
+                        price
+                    }
+                }
+            `;
+            graphqlRequest(query).then(data => {
+                document.getElementById('productsByPrice').innerHTML = 
+                    '<pre>' + JSON.stringify(data.data.allProductsByPrice, null, 2) + '</pre>';
+            });
+        }
+
+        function loadProductsByCategory() {
+            const categoryId = document.getElementById('catId').value;
+            const query = `
+                query ($categoryId: ID!) {
+                    productsByCategory(categoryId: $categoryId) {
+                        id
+                        title
+                        price
+                    }
+                }
+            `;
+            graphqlRequest(query, { categoryId }).then(data => {
+                document.getElementById('productsByCat').innerHTML = 
+                    '<pre>' + JSON.stringify(data.data.productsByCategory, null, 2) + '</pre>';
+            });
+        }
+
+        function createUser() {
+            const fullname = document.getElementById('userFullname').value;
+            const email = document.getElementById('userEmail').value;
+            const password = document.getElementById('userPassword').value;
+            const phone = document.getElementById('userPhone').value;
+            const mutation = `
+                mutation ($input: CreateUserInput!) {
+                    createUser(input: $input) {
+                        id
+                        fullname
+                        email
+                    }
+                }
+            `;
+            graphqlRequest(mutation, { 
+                input: { fullname, email, password, phone } 
+            }).then(data => alert('Tạo User thành công: ' + JSON.stringify(data.data.createUser)));
+        }
+
+        function loadAllUsers() {
+            const query = `
+                query {
+                    allUsers {
+                        id
+                        fullname
+                        email
+                        categories { id name }
+                    }
+                }
+            `;
+            graphqlRequest(query).then(data => {
+                document.getElementById('users').innerHTML = 
+                    '<pre>' + JSON.stringify(data.data.allUsers, null, 2) + '</pre>';
+            });
+        }
+
+    </script>
+</body>
+</html>
